@@ -1,0 +1,31 @@
+{
+  "name": "@eidos.space/plugin-chart",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "engines": {
+    "node": ">=22"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "check": "eidos-plugin check .",
+    "pack:plugin": "eidos-plugin pack .",
+    "build": "npm run pack:plugin"
+  },
+  "dependencies": {
+    "chart.js": "4.5.1",
+    "react": "18.3.1",
+    "react-dom": "18.3.1"
+  },
+  "devDependencies": {
+    "@eidos.space/eidos-file": "3.1.0",
+    "@eidos.space/plugin-sdk": "^0.1.1",
+    "@eidos.space/plugin-tools": "^0.1.1",
+    "@types/react": "18.3.28",
+    "@types/react-dom": "18.3.7",
+    "esbuild": "0.28.1",
+    "typescript": "5.8.3",
+    "vitest": "4.1.11"
+  }
+}

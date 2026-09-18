@@ -1,0 +1,103 @@
+{
+  "apiVersion": 1,
+  "id": "eidos.chart",
+  "name": "Chart",
+  "version": "0.1.0",
+  "icon": {
+    "paths": [
+      "M3 3v18h18",
+      "M7 16v-5",
+      "M12 16V7",
+      "M17 16v-8"
+    ]
+  },
+  "views": [
+    {
+      "id": "chart",
+      "title": "Chart",
+      "entry": "./src/view.tsx",
+      "context": "table",
+      "access": "read",
+      "icon": {
+        "paths": [
+          "M3 3v16a2 2 0 0 0 2 2h16",
+          "m19 9-5 5-4-4-3 3"
+        ]
+      },
+      "configuration": {
+        "type": "object",
+        "properties": {
+          "type": {
+            "type": "string",
+            "title": "Chart type",
+            "default": "Column",
+            "enum": [
+              "Column",
+              "Bar",
+              "Line",
+              "Donut",
+              "Number"
+            ]
+          },
+          "group": {
+            "type": "string",
+            "title": "Group by",
+            "default": "",
+            "x-field": true
+          },
+          "value": {
+            "type": "string",
+            "title": "Value field",
+            "default": "",
+            "x-field": true,
+            "description": "Required for numeric aggregations. Count counts records."
+          },
+          "aggregate": {
+            "type": "string",
+            "title": "Calculate",
+            "default": "Count",
+            "enum": [
+              "Count",
+              "Sum",
+              "Average",
+              "Minimum",
+              "Maximum"
+            ]
+          },
+          "date": {
+            "type": "string",
+            "title": "Date grouping (UTC)",
+            "default": "Exact",
+            "enum": [
+              "Exact",
+              "Day",
+              "Month",
+              "Year"
+            ]
+          },
+          "sort": {
+            "type": "string",
+            "title": "Sort",
+            "default": "Label",
+            "enum": [
+              "Label",
+              "Value descending",
+              "Value ascending"
+            ]
+          },
+          "legend": {
+            "type": "boolean",
+            "title": "Show legend",
+            "default": true
+          }
+        }
+      }
+    }
+  ],
+  "placements": [
+    {
+      "location": "table/view",
+      "view": "chart"
+    }
+  ]
+}
