@@ -2,6 +2,8 @@
 
 Official chart visualization plugin for Eidos Lite table views.
 
+Version 0.2.0 requires Eidos Lite 0.19.0 or later and plugin API 2.0.0.
+
 ## Features
 
 - **Multiple Chart Types**: Column, Bar, Line, Donut, and Big Number metrics.
@@ -11,12 +13,12 @@ Official chart visualization plugin for Eidos Lite table views.
 
 ## Development
 
-\`\`\`bash
-npm install
+```bash
+npm ci
 npm test
 npm run check
 npm run pack:plugin
-\`\`\`
+```
 
 ## License
 

@@ -295,11 +295,12 @@ function ChartView({ table }: { table: TableContext }) {
 }
 
 const mount: Mount = (ctx, element) => {
-  if (ctx.binding.kind !== "table") {
+  const table = ctx.table
+  if (!table) {
     throw new Error("Chart plugin requires a table view")
   }
   const root = createRoot(element)
-  root.render(<ChartView table={ctx.binding.table} />)
+  root.render(<ChartView table={table} />)
   return {
     dispose: () => root.unmount(),
   }
