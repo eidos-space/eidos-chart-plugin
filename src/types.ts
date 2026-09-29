@@ -33,7 +33,7 @@ export interface ChartDataResult {
   totalRecords: number
 }
 
-export interface TableViewSnapshot {
+export interface EidosTableSnapshot {
   fields: EidosFileFieldInfo[]
   view: EidosFileViewInfo
 }

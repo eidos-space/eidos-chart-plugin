@@ -2,7 +2,7 @@
 
 Official chart visualization plugin for Eidos Lite table views.
 
-Version 0.2.0 requires Eidos Lite 0.19.0 or later and plugin API 2.0.0.
+Version 0.3.0 requires plugin API 3.0.0, supported by Eidos Lite 0.20.0 and Eidos CLI 3.0.0 or later. In CLI Serve, install the plugin with `eidos plugin install` and add a Chart view from the table's view menu.
 
 ## Features
 

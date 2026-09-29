@@ -1,9 +1,11 @@
 {
   "apiVersion": 1,
-  "requires": { "pluginApi": "2.0.0" },
+  "requires": {
+    "pluginApi": "3.0.0"
+  },
   "id": "eidos.chart",
   "name": "Chart",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "icon": {
     "paths": [
       "M3 3v18h18",
@@ -17,7 +19,6 @@
       "id": "chart",
       "title": "Chart",
       "entry": "./src/view.tsx",
-      "context": "table",
       "access": "read",
       "icon": {
         "paths": [
@@ -92,7 +93,11 @@
             "default": true
           }
         }
-      }
+      },
+      "kind": "file",
+      "capabilities": [
+        "eidos/table"
+      ]
     }
   ],
   "placements": [

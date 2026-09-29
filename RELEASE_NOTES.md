@@ -1,5 +1,5 @@
-# Chart 0.2.0
+# Chart 0.3.0
 
-Chart now supports Eidos Lite 0.19.0 and plugin API 2.0. Existing chart views and their settings remain in the Eidos File when you replace the plugin package.
+Requires Eidos Lite 0.20.0 or later and Plugin API 3. Update Lite before installing this package.
 
-Install this version with Eidos Lite 0.19.0 or later.
+Charts use the Eidos table capability for context and aggregation. Existing chart settings remain in the Eidos File. CLI Serve requires Eidos CLI 3.0.0 or later.

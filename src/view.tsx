@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react"
 import { createRoot } from "react-dom/client"
-import type { Mount, TableContext, TableViewSnapshot } from "@eidos.space/plugin-sdk"
+import type { Mount, EidosTable, EidosTableSnapshot } from "@eidos.space/plugin-sdk"
 import {
   aggregateRowsClientSide,
   toTableAggregateOptions,
@@ -10,7 +10,7 @@ import { NumberCard } from "./charts/number-card"
 import type { ChartConfig, ChartDataResult } from "./types"
 import "./style.css"
 
-function initialConfig(snapshot: TableViewSnapshot): ChartConfig {
+function initialConfig(snapshot: EidosTableSnapshot): ChartConfig {
   const saved = snapshot.view.properties?.plugin as
     | Partial<ChartConfig>
     | undefined
@@ -65,9 +65,9 @@ function useColorScheme(): boolean {
   return isDark
 }
 
-function ChartView({ table }: { table: TableContext }) {
+function ChartView({ table }: { table: EidosTable }) {
   const isDark = useColorScheme()
-  const [snapshot, setSnapshot] = useState<TableViewSnapshot | null>(null)
+  const [snapshot, setSnapshot] = useState<EidosTableSnapshot | null>(null)
   const [config, setConfig] = useState<ChartConfig>({
     type: "Column",
     group: "",
@@ -87,7 +87,7 @@ function ChartView({ table }: { table: TableContext }) {
 
   // Listen to invalidation events from the table
   useEffect(() => {
-    const observation = table.observe(() => setRevision((v) => v + 1))
+    const observation = table.watch(() => setRevision((v) => v + 1))
     return () => observation.dispose()
   }, [table])
 
@@ -95,7 +95,7 @@ function ChartView({ table }: { table: TableContext }) {
   useEffect(() => {
     let active = true
     void table
-      .read()
+      .readContext()
       .then((val) => {
         if (active) {
           setSnapshot(val)
@@ -144,7 +144,7 @@ function ChartView({ table }: { table: TableContext }) {
         const MAX_ROWS = 50000
 
         while (offset < MAX_ROWS) {
-          const page = await table.getPage({ offset, limit })
+          const page = await table.readRows({ offset, limit })
           allRows.push(...page.rows)
           if (page.rows.length < limit || allRows.length >= (page.total ?? 0)) {
             break
@@ -295,7 +295,7 @@ function ChartView({ table }: { table: TableContext }) {
 }
 
 const mount: Mount = (ctx, element) => {
-  const table = ctx.table
+  const table = ctx.capabilities.eidos?.table
   if (!table) {
     throw new Error("Chart plugin requires a table view")
   }
