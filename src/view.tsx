@@ -1,10 +1,12 @@
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { createRoot } from "react-dom/client"
-import type { Mount, EidosTable, EidosTableSnapshot } from "@eidos.space/plugin-sdk"
-import {
-  aggregateRowsClientSide,
-  toTableAggregateOptions,
-} from "./aggregate"
+import type {
+  Mount,
+  EidosTable,
+  EidosTableSnapshot,
+} from "@eidos.space/plugin-sdk"
+import { exportChartPng, type ChartHostUI } from "./export"
+import { aggregateRowsClientSide, toTableAggregateOptions } from "./aggregate"
 import { ChartCanvas } from "./charts/chart-canvas"
 import { NumberCard } from "./charts/number-card"
 import type { ChartConfig, ChartDataResult } from "./types"
@@ -65,7 +67,26 @@ function useColorScheme(): boolean {
   return isDark
 }
 
-function ChartView({ table }: { table: EidosTable }) {
+function ChartView({
+  table,
+  ui,
+  embedded,
+}: {
+  table: EidosTable
+  ui: ChartHostUI
+  embedded: boolean
+}) {
+  const chartRoot = useRef<HTMLElement>(null)
+  const exportBusy = useRef(false)
+  const active = useRef(true)
+  const [exporting, setExporting] = useState(false)
+  const [exportStatus, setExportStatus] = useState("")
+  useEffect(() => {
+    active.current = true
+    return () => {
+      active.current = false
+    }
+  }, [])
   const isDark = useColorScheme()
   const [snapshot, setSnapshot] = useState<EidosTableSnapshot | null>(null)
   const [config, setConfig] = useState<ChartConfig>({
@@ -195,51 +216,81 @@ function ChartView({ table }: { table: EidosTable }) {
     return true
   }, [config])
 
-  const exportImage = () => {
-    const canvas = window.document.querySelector(
-      ".chart-canvas-container canvas"
-    ) as HTMLCanvasElement | null
-    if (!canvas) return
-    const url = canvas.toDataURL("image/png")
-    const a = window.document.createElement("a")
-    a.href = url
-    a.download = `chart-${Date.now()}.png`
-    a.click()
+  const exportImage = async () => {
+    if (exportBusy.current || !ui.exportFile) return
+    exportBusy.current = true
+    setExporting(true)
+    setExportStatus("")
+    try {
+      const canvas =
+        chartRoot.current?.querySelector<HTMLCanvasElement>(
+          ".chart-canvas-container canvas"
+        ) ?? null
+      const status = await exportChartPng(
+        canvas,
+        ui.exportFile,
+        `chart-${Date.now()}.png`
+      )
+      if (active.current) setExportStatus(status)
+    } catch (cause) {
+      if (active.current)
+        setExportStatus(
+          `Export failed: ${cause instanceof Error ? cause.message : String(cause)}`
+        )
+    } finally {
+      exportBusy.current = false
+      if (active.current) setExporting(false)
+    }
   }
 
   return (
-    <main className="chart-root">
-      <header className="chart-header">
-        <div className="chart-title-area">
-          <h1 className="chart-title">
-            {config.type === "Number"
-              ? "Metric"
-              : `${groupField?.name ?? "Items"} by ${config.aggregate}`}
-          </h1>
-          <span className="chart-record-count">
-            · {data.totalRecords.toLocaleString()}{" "}
-            {data.totalRecords === 1 ? "record" : "records"}
-          </span>
-        </div>
-        <div className="chart-actions">
-          {config.type !== "Number" && isConfigured && data.items.length > 0 && (
+    <main className={`chart-root${embedded ? " chart-embedded" : ""}`} ref={chartRoot}>
+      {!embedded && (
+        <header className="chart-header">
+          <div className="chart-title-area">
+            <h1 className="chart-title">
+              {config.type === "Number"
+                ? "Metric"
+                : `${groupField?.name ?? "Items"} by ${config.aggregate}`}
+            </h1>
+            <span className="chart-record-count">
+              · {data.totalRecords.toLocaleString()}{" "}
+              {data.totalRecords === 1 ? "record" : "records"}
+            </span>
+          </div>
+          <div className="chart-actions">
+            {config.type !== "Number" &&
+              isConfigured &&
+              data.items.length > 0 && (
+                <button
+                  className="chart-btn"
+                  onClick={exportImage}
+                  disabled={exporting || loading || !ui.exportFile}
+                  title={
+                    ui.exportFile
+                      ? "Export as PNG image"
+                      : "PNG export requires an Eidos host with file export support"
+                  }
+                >
+                  {exporting ? "Exporting…" : "Export PNG"}
+                </button>
+              )}
             <button
               className="chart-btn"
-              onClick={exportImage}
-              title="Export as PNG image"
+              onClick={() => setRevision((v) => v + 1)}
+              title="Refresh chart"
             >
-              Export PNG
+              ↻
             </button>
-          )}
-          <button
-            className="chart-btn"
-            onClick={() => setRevision((v) => v + 1)}
-            title="Refresh chart"
-          >
-            ↻
-          </button>
-        </div>
-      </header>
+          </div>
+        </header>
+      )}
+      <div role="status" aria-live="polite" className="chart-export-status">
+        {exportStatus ||
+          (!ui.exportFile && config.type !== "Number"
+            ? "PNG export requires an Eidos host with file export support."
+            : "")}
+      </div>
 
       {error && (
         <div className="chart-error" role="alert">
@@ -300,7 +351,14 @@ const mount: Mount = (ctx, element) => {
     throw new Error("Chart plugin requires a table view")
   }
   const root = createRoot(element)
-  root.render(<ChartView table={table} />)
+  const presentation = ctx.presentation
+  root.render(
+    <ChartView
+      table={table}
+      ui={ctx.capabilities.ui}
+      embedded={presentation?.mode === "embedded"}
+    />
+  )
   return {
     dispose: () => root.unmount(),
   }

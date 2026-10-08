@@ -54,7 +54,14 @@ body,
   overflow: hidden;
   background-color: var(--chart-bg);
   color: var(--chart-text);
-  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", sans-serif;
+  font-family:
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    Roboto,
+    "Helvetica Neue",
+    sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -193,6 +200,24 @@ body,
   color: var(--chart-subtext);
 }
 
+.chart-embedded {
+  padding: 12px;
+}
+.chart-embedded .number-card-container {
+  padding: 0;
+}
+.chart-embedded .number-card {
+  background: transparent;
+  border: 0;
+  box-shadow: none;
+  border-radius: 0;
+  min-width: 0;
+  padding: 8px;
+}
+.chart-embedded .number-card-value {
+  font-size: clamp(28px, 6vw, 48px);
+}
+
 .chart-empty {
   display: flex;
   flex-direction: column;
@@ -256,4 +281,14 @@ body,
   border-radius: 4px;
   font-size: 12px;
   cursor: pointer;
+}
+.chart-export-status:not(:empty) {
+  padding: 0 20px 10px;
+  color: var(--chart-subtext);
+  font-size: 12px;
+}
+
+.chart-btn:disabled {
+  opacity: 0.5;
+  cursor: default;
 }

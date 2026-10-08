@@ -5,7 +5,7 @@
   },
   "id": "eidos.chart",
   "name": "Chart",
-  "version": "0.3.0",
+  "version": "0.3.2",
   "icon": {
     "paths": [
       "M3 3v18h18",
