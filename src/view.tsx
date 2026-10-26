@@ -11,6 +11,7 @@ import { ChartCanvas } from "./charts/chart-canvas"
 import { NumberCard } from "./charts/number-card"
 import type { ChartConfig, ChartDataResult } from "./types"
 import "./style.css"
+import { I18nContext, usePluginI18n } from "./i18n"
 
 function initialConfig(snapshot: EidosTableSnapshot): ChartConfig {
   const saved = snapshot.view.properties?.plugin as
@@ -77,10 +78,22 @@ function ChartView({
   embedded: boolean
 }) {
   const chartRoot = useRef<HTMLElement>(null)
+  const i18n = usePluginI18n()
+  const t = i18n.t
+  const exportLabels: Record<string, string> = {
+    "Export cancelled.": "ui.exportCancelled",
+    "PNG saved.": "ui.pngSaved",
+    "PNG download started.": "ui.pngDownload",
+    "The chart is not ready to export.": "ui.chartNotReady",
+    "Could not create the PNG image.": "ui.pngCreateFailed",
+  }
   const exportBusy = useRef(false)
   const active = useRef(true)
   const [exporting, setExporting] = useState(false)
   const [exportStatus, setExportStatus] = useState("")
+  const exportMessage = exportStatus.startsWith("Export failed: ")
+    ? t("ui.exportFailed", { error: exportLabels[exportStatus.slice(15)] ? t(exportLabels[exportStatus.slice(15)]!) : exportStatus.slice(15) })
+    : exportLabels[exportStatus] ? t(exportLabels[exportStatus]!) : exportStatus
   useEffect(() => {
     active.current = true
     return () => {
@@ -250,12 +263,11 @@ function ChartView({
           <div className="chart-title-area">
             <h1 className="chart-title">
               {config.type === "Number"
-                ? "Metric"
-                : `${groupField?.name ?? "Items"} by ${config.aggregate}`}
+                ? t("ui.metric")
+                : t("ui.chartTitle", { field: groupField?.name ?? t("ui.items"), aggregate: t("aggregate." + config.aggregate) })}
             </h1>
             <span className="chart-record-count">
-              · {data.totalRecords.toLocaleString()}{" "}
-              {data.totalRecords === 1 ? "record" : "records"}
+              · {t(data.totalRecords === 1 ? "ui.record" : "ui.records", { count: data.totalRecords.toLocaleString(i18n.locale) })}
             </span>
           </div>
           <div className="chart-actions">
@@ -268,17 +280,17 @@ function ChartView({
                   disabled={exporting || loading || !ui.exportFile}
                   title={
                     ui.exportFile
-                      ? "Export as PNG image"
-                      : "PNG export requires an Eidos host with file export support"
+                      ? t("ui.pngTitle")
+                      : t("ui.pngUnavailable")
                   }
                 >
-                  {exporting ? "Exporting…" : "Export PNG"}
+                  {exporting ? t("ui.exporting") : t("ui.exportPng")}
                 </button>
               )}
             <button
               className="chart-btn"
               onClick={() => setRevision((v) => v + 1)}
-              title="Refresh chart"
+              title={t("ui.refresh")}
             >
               ↻
             </button>
@@ -286,16 +298,16 @@ function ChartView({
         </header>
       )}
       <div role="status" aria-live="polite" className="chart-export-status">
-        {exportStatus ||
+        {exportMessage ||
           (!ui.exportFile && config.type !== "Number"
-            ? "PNG export requires an Eidos host with file export support."
+            ? t("ui.pngUnavailable")
             : "")}
       </div>
 
       {error && (
         <div className="chart-error" role="alert">
           <span>{error}</span>
-          <button onClick={() => setRevision((v) => v + 1)}>Retry</button>
+          <button onClick={() => setRevision((v) => v + 1)}>{t("ui.retry")}</button>
         </div>
       )}
 
@@ -314,20 +326,20 @@ function ChartView({
               <path d="M12 16V7" />
               <path d="M17 16v-8" />
             </svg>
-            <div className="chart-empty-title">Configure Chart</div>
+            <div className="chart-empty-title">{t("ui.configure")}</div>
             <div className="chart-empty-hint">
               {!config.group && config.type !== "Number"
-                ? "Select a 'Group by' field in the View settings menu above."
-                : "Select a numeric 'Value field' in View settings to calculate."}
+                ? t("ui.chooseGroup")
+                : t("ui.chooseValue")}
             </div>
           </div>
         ) : loading && data.items.length === 0 ? (
-          <div className="chart-loading">Loading chart data…</div>
+          <div className="chart-loading">{t("ui.loading")}</div>
         ) : data.totalRecords === 0 ? (
           <div className="chart-empty">
-            <div className="chart-empty-title">No Records</div>
+            <div className="chart-empty-title">{t("ui.empty")}</div>
             <div className="chart-empty-hint">
-              There are no matching records for the current filters.
+              {t("ui.noMatches")}
             </div>
           </div>
         ) : config.type === "Number" ? (
@@ -348,16 +360,16 @@ function ChartView({
 const mount: Mount = (ctx, element) => {
   const table = ctx.capabilities.eidos?.table
   if (!table) {
-    throw new Error("Chart plugin requires a table view")
+    throw new Error(ctx.i18n.t("ui.tableRequired"))
   }
   const root = createRoot(element)
   const presentation = ctx.presentation
   root.render(
-    <ChartView
+    <I18nContext.Provider value={ctx.i18n}><ChartView
       table={table}
       ui={ctx.capabilities.ui}
       embedded={presentation?.mode === "embedded"}
-    />
+    /></I18nContext.Provider>
   )
   return {
     dispose: () => root.unmount(),

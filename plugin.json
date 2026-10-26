@@ -1,11 +1,11 @@
 {
   "apiVersion": 1,
   "requires": {
-    "pluginApi": "3.0.0"
+    "pluginApi": "3.7.0"
   },
   "id": "eidos.chart",
-  "name": "Chart",
-  "version": "0.3.2",
+  "name": "%plugin.name%",
+  "version": "0.4.0",
   "icon": {
     "paths": [
       "M3 3v18h18",
@@ -17,7 +17,7 @@
   "views": [
     {
       "id": "chart",
-      "title": "Chart",
+      "title": "%views.chart.title%",
       "entry": "./src/view.tsx",
       "access": "read",
       "icon": {
@@ -31,7 +31,7 @@
         "properties": {
           "type": {
             "type": "string",
-            "title": "Chart type",
+            "title": "%views.chart.type.title%",
             "default": "Column",
             "enum": [
               "Column",
@@ -43,20 +43,20 @@
           },
           "group": {
             "type": "string",
-            "title": "Group by",
+            "title": "%views.chart.group.title%",
             "default": "",
             "x-field": true
           },
           "value": {
             "type": "string",
-            "title": "Value field",
+            "title": "%views.chart.value.title%",
             "default": "",
             "x-field": true,
-            "description": "Required for numeric aggregations. Count counts records."
+            "description": "%views.chart.value.description%"
           },
           "aggregate": {
             "type": "string",
-            "title": "Calculate",
+            "title": "%views.chart.aggregate.title%",
             "default": "Count",
             "enum": [
               "Count",
@@ -68,7 +68,7 @@
           },
           "date": {
             "type": "string",
-            "title": "Date grouping (UTC)",
+            "title": "%views.chart.date.title%",
             "default": "Exact",
             "enum": [
               "Exact",
@@ -79,7 +79,7 @@
           },
           "sort": {
             "type": "string",
-            "title": "Sort",
+            "title": "%views.chart.sort.title%",
             "default": "Label",
             "enum": [
               "Label",
@@ -89,7 +89,7 @@
           },
           "legend": {
             "type": "boolean",
-            "title": "Show legend",
+            "title": "%views.chart.legend.title%",
             "default": true
           }
         }
@@ -105,5 +105,17 @@
       "location": "table/view",
       "view": "chart"
     }
-  ]
+  ],
+  "description": "%plugin.description%",
+  "i18n": {
+    "defaultLocale": "en",
+    "messages": {
+      "en": "./locales/en.json",
+      "zh-CN": "./locales/zh-CN.json"
+    },
+    "readme": {
+      "en": "./README.md",
+      "zh-CN": "./README.zh-CN.md"
+    }
+  }
 }

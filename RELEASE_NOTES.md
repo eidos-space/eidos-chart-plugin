@@ -1,5 +1,8 @@
-# Chart 0.3.0
+## What's new
 
-Requires Eidos Lite 0.20.0 or later and Plugin API 3. Update Lite before installing this package.
+- Add English and Simplified Chinese plugin names, descriptions and bundled documentation, selected using the host language.
+- Translate plugin controls and messages using the host's language API. User content, file paths and stored configuration values retain their original values.
 
-Charts use the Eidos table capability for context and aggregation. Existing chart settings remain in the Eidos File. CLI Serve requires Eidos CLI 3.0.0 or later.
+## Requirements
+
+Requires Eidos Lite 0.29.0 or later with Plugin API 3.7.0. CLI Serve requires Eidos CLI 3.3.0 or later. Current Android and iOS hosts do not support this archive; existing older installations remain usable.
