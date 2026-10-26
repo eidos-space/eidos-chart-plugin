@@ -23,6 +23,7 @@ import {
   getChartPalette,
 } from "../aggregate"
 import type { ChartConfig, ChartDataItem } from "../types"
+import { usePluginI18n } from "../i18n"
 
 // Register only needed Chart.js components
 ChartJS.register(
@@ -51,6 +52,7 @@ export function ChartCanvas({
   isDark: boolean
 }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
+  const i18n = usePluginI18n()
   const chartInstanceRef = useRef<ChartJS | null>(null)
 
   useEffect(() => {
@@ -62,7 +64,7 @@ export function ChartCanvas({
       chartInstanceRef.current = null
     }
 
-    const labels = items.map((item) => item.label)
+    const labels = items.map((item) => item.key == null ? i18n.t("ui.emptyGroup") : item.label)
     const values = items.map((item) => item.value)
     const colors = getChartPalette(items.length, isDark)
 
@@ -77,6 +79,7 @@ export function ChartCanvas({
     let chartType: "bar" | "line" | "doughnut" = "bar"
     let data: ChartData = { labels, datasets: [] }
     let options: ChartOptions = {
+      locale: i18n.locale,
       responsive: true,
       maintainAspectRatio: false,
       animation: { duration: 350 },
@@ -110,7 +113,7 @@ export function ChartCanvas({
                 typeof parsed === "number"
                   ? parsed
                   : (parsed?.y ?? parsed?.x ?? 0)
-              return ` ${config.aggregate}: ${formatMetricNumber(val)}`
+              return ` ${i18n.t("aggregate." + config.aggregate)}: ${formatMetricNumber(val)}`
             },
           },
         },
@@ -123,7 +126,7 @@ export function ChartCanvas({
         labels,
         datasets: [
           {
-            label: config.aggregate,
+            label: i18n.t("aggregate." + config.aggregate),
             data: values,
             backgroundColor: colors,
             borderRadius: 4,
@@ -165,7 +168,7 @@ export function ChartCanvas({
         labels,
         datasets: [
           {
-            label: config.aggregate,
+            label: i18n.t("aggregate." + config.aggregate),
             data: values,
             backgroundColor: colors,
             borderRadius: 4,
@@ -202,7 +205,7 @@ export function ChartCanvas({
         labels,
         datasets: [
           {
-            label: config.aggregate,
+            label: i18n.t("aggregate." + config.aggregate),
             data: values,
             borderColor: lineColor,
             backgroundColor: isDark
@@ -252,7 +255,7 @@ export function ChartCanvas({
         labels,
         datasets: [
           {
-            label: config.aggregate,
+            label: i18n.t("aggregate." + config.aggregate),
             data: values,
             backgroundColor: colors,
             borderColor: isDark ? "#191919" : "#ffffff",
@@ -276,7 +279,7 @@ export function ChartCanvas({
       chart.destroy()
       chartInstanceRef.current = null
     }
-  }, [items, config, isDark])
+  }, [items, config, isDark, i18n.locale])
 
   return (
     <div
