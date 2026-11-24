@@ -8,6 +8,7 @@ import {
   dayKeyForInstant,
   dayKeyOf,
   scaleColor,
+  scaleGradient,
 } from "./calendar"
 
 const f = (o: Record<string, unknown>) => o as unknown as EidosFileFieldInfo
@@ -41,7 +42,8 @@ describe("colored calendar", () => {
       { _id: "d", dt: "2026-11-16T18:00:00.000Z", n: -1 },
     ])
     const m = buildCalendarModel(rows, [dateField, numField], cfg("Average"))
-    expect(m.range).toEqual({ min: 0, max: 2 })
+    // The scale spans the recorded values (-1..2), not just the daily averages.
+    expect(m.range).toEqual({ min: -1, max: 2 })
     expect(m.days.get("2026-11-17")).toMatchObject({
       value: 2,
       count: 2,
@@ -195,5 +197,121 @@ describe("colored calendar", () => {
     expect(contrastText(CALENDAR_COLORS.Blue)).toBe("#1f1f1e")
     expect(contrastText("#ffffff")).toBe("#1f1f1e")
     expect(contrastText("#000000")).toBe("#ffffff")
+  })
+
+  describe("scale range", () => {
+    const moodFormula = `CASE
+      WHEN "Mood" = 'Awful' THEN -2
+      WHEN "Mood" = 'Bad' THEN -1
+      WHEN "Mood" = 'Okay' THEN 0
+      WHEN "Mood" = 'Good' THEN 1
+      WHEN "Mood" = 'Great' THEN 2
+      ELSE NULL
+    END`
+    const mood = (formula?: string) =>
+      f({
+        id: "f_n",
+        name: "Mood Number Values",
+        type: "formula",
+        tableColumnName: "n",
+        settings: formula === undefined ? undefined : { formula },
+      })
+
+    it("reads the possible range from a literal CASE formula", () => {
+      // Only 0 and 1 were ever recorded, but the field can go from -2 to 2.
+      const rows = rowsOf([
+        { dt: "2026-11-16T10:00:00Z", n: 1 },
+        { dt: "2026-11-17T10:00:00Z", n: 0 },
+      ])
+      const m = buildCalendarModel(rows, [dateField, mood(moodFormula)], cfg("Average"))
+      expect(m.range).toEqual({ min: -2, max: 2 })
+      expect(m.days.get("2026-11-16")?.value).toBe(1)
+      // The best day is NOT the darkest color.
+      const blue = CALENDAR_COLORS.Blue
+      expect(scaleColor(1, -2, 2, blue, false)).not.toBe(blue)
+    })
+
+    it("uses every recorded value when the formula range is unknown", () => {
+      const rows = rowsOf([
+        { dt: "2026-11-15T10:00:00Z", n: -2 },
+        { dt: "2026-11-15T11:00:00Z", n: 2 },
+        { dt: "2026-11-16T10:00:00Z", n: 1 },
+        { dt: "2026-11-17T10:00:00Z", n: 0 },
+      ])
+      for (const field of [
+        mood(), // formula text not exposed
+        mood(`"Mood" * 2`), // not a literal CASE
+        mood(`CASE WHEN "Mood" = 'Great' THEN "Score" ELSE 0 END`), // non-literal result
+      ]) {
+        const m = buildCalendarModel(rows, [dateField, field], cfg("Average"))
+        expect(m.range).toEqual({ min: -2, max: 2 })
+      }
+    })
+
+    it("applies to Minimum and Maximum but not to Sum or Count", () => {
+      const rows = rowsOf([
+        { dt: "2026-11-16T10:00:00Z", n: 1 },
+        { dt: "2026-11-16T11:00:00Z", n: 2 },
+        { dt: "2026-11-17T10:00:00Z", n: 4 },
+        { dt: "2026-11-18T10:00:00Z", n: 9 },
+      ])
+      const range = (agg: ChartConfig["aggregate"]) =>
+        buildCalendarModel(rows, [dateField, numField], cfg(agg)).range
+      expect(range("Average")).toEqual({ min: 1, max: 9 })
+      expect(range("Minimum")).toEqual({ min: 1, max: 9 })
+      expect(range("Maximum")).toEqual({ min: 1, max: 9 })
+      expect(range("Sum")).toEqual({ min: 3, max: 9 }) // days only
+      expect(range("Count")).toEqual({ min: 1, max: 2 }) // days only
+    })
+
+    it("widens the formula range if a recorded value falls outside it", () => {
+      const rows = rowsOf([{ dt: "2026-11-16T10:00:00Z", n: 5 }])
+      const m = buildCalendarModel(rows, [dateField, mood(moodFormula)], cfg("Average"))
+      expect(m.range).toEqual({ min: -2, max: 5 })
+    })
+
+    it("ignores text literals and NULL when reading the formula", () => {
+      const rows = rowsOf([{ dt: "2026-11-16T10:00:00Z", n: 0 }])
+      const field = mood(`CASE WHEN "Tag" = 'THEN 99' THEN -1 ELSE 1 END`)
+      expect(buildCalendarModel(rows, [dateField, field], cfg("Average")).range).toEqual({
+        min: -1,
+        max: 1,
+      })
+    })
+  })
+
+  describe("color curve", () => {
+    const blue = CALENDAR_COLORS.Blue
+    const red = (hex: string) => parseInt(hex.slice(1, 3), 16)
+    // Share of the way from the neutral color to the base color (red channel).
+    const share = (value: number) => {
+      const base = red(blue)
+      const light = 232 // neutral light gray used for empty/min tint
+      return (light - red(scaleColor(value, -2, 2, blue, false))) / (light - base)
+    }
+
+    it("keeps mid-high values clearly lighter than the maximum", () => {
+      expect(share(2)).toBeCloseTo(1, 2)
+      expect(share(2 / 3)).toBeGreaterThan(0.4)
+      expect(share(2 / 3)).toBeLessThan(0.6)
+      expect(share(0)).toBeLessThan(0.4)
+      expect(share(-1.5)).toBeLessThan(0.2)
+      // The gap between 0.67 and +2 is large (it was about a quarter before).
+      expect(share(2) - share(2 / 3)).toBeGreaterThan(0.4)
+    })
+
+    it("is monotonic and clamps values outside the range", () => {
+      const values = [-2, -1, 0, 1, 2].map(share)
+      expect([...values].sort((a, b) => a - b)).toEqual(values)
+      expect(scaleColor(9, -2, 2, blue, false)).toBe(scaleColor(2, -2, 2, blue, false))
+      expect(scaleColor(-9, -2, 2, blue, false)).toBe(scaleColor(-2, -2, 2, blue, false))
+    })
+
+    it("draws the legend with the same curve as the cells", () => {
+      const gradient = scaleGradient(-2, 2, blue, false)
+      expect(gradient).toContain(scaleColor(2, -2, 2, blue, false))
+      expect(gradient).toContain(scaleColor(0, -2, 2, blue, false))
+      expect(gradient.match(/%/g)).toHaveLength(9)
+    })
   })
 })

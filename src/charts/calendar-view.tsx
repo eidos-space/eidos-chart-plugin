@@ -5,6 +5,7 @@ import {
   contrastText,
   dayKeyForInstant,
   scaleColor,
+  scaleGradient,
   type CalendarModel,
 } from "../calendar"
 import type { CalendarColorName, CalendarTimezone } from "../types"
@@ -230,7 +231,7 @@ export function CalendarView({
             <span
               className="cal-gradient"
               style={{
-                background: `linear-gradient(90deg, ${scaleColor(range.min, range.min, range.max, baseColor, isDark)}, ${scaleColor(range.max, range.min, range.max, baseColor, isDark)})`,
+                background: scaleGradient(range.min, range.max, baseColor, isDark),
               }}
             />
             <span className="cal-legend-text">
